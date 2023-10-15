@@ -1,0 +1,36 @@
+- hosts: webserver
+  become: true
+  remote_user: ec2-user
+  tasks:
+    - name: Install NGINX
+      ansible.builtin.package:
+        name: nginx
+        state: latest
+        update_cache: yes
+
+    - name: Remove default NGINX configuration
+      ansible.builtin.file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+                             
+    - name: Add NGINX configuration
+      ansible.builtin.copy:
+        src: static-site-config
+        dest: /etc/nginx/sites-available/
+        owner: "{{ user }}"
+        group: root
+        mode: '0644'
+
+    - name: Enable website configuration
+      ansible.builtin.file:
+        src: /etc/nginx/sites-available/static-site-config
+        dest: /etc/nginx/sites-enabled/static-site-config
+        state: link
+
+    - name: Ensure NGINX is running
+      ansible.builtin.service:
+        name: nginx
+        state: started
+        enabled: yes
+  vars:
+    user: "ec2-user"
